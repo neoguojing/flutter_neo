@@ -33,7 +33,14 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
     final provider = Provider.of<InvestmentProvider>(context);
     final totalRatio = provider.totalMainRatio;
     final totalAmount = provider.globalTotalAmount;
-
+    
+    if (provider.isLoaded && _totalAmountController.text != provider.globalTotalAmount.toString()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _totalAmountController.text = provider.globalTotalAmount.toString();
+        }
+      });
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('分散投资'),
@@ -192,6 +199,7 @@ class _InvestmentCardState extends State<_InvestmentCard> {
     final rowAmount = widget.totalAmount * (widget.row.ratio / 100);
     final double subTotalRatio = provider.getSubToolTotal(widget.row.id);
     final subInvestments = provider.allInvestments.where((sub) => sub.parentId == widget.row.id).toList();
+
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),

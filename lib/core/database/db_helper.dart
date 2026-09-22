@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'dart:io';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -22,7 +23,9 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    final dbPath = join(await getDatabasesPath(), filePath);
+    final directory = await getApplicationSupportDirectory();
+    final dbPath = join(directory.path, filePath);
+    print('Database path: $dbPath'); // 打印数据库路径，便于调试
     return await openDatabase(
       dbPath,
       version: 3,
@@ -40,6 +43,7 @@ class DatabaseHelper {
             lastUpdated TEXT
           )
         ''');
+        await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value REAL)');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {

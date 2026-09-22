@@ -8,6 +8,7 @@ class InvestmentProvider extends ChangeNotifier {
   final IInvestmentRepository _repository;
   List<Investment> _allInvestments = [];
   double _globalTotalAmount = 1000000.0;
+  bool _isLoaded = false;
 
   InvestmentProvider(this._repository) {
     _loadInitialData();
@@ -16,6 +17,8 @@ class InvestmentProvider extends ChangeNotifier {
   List<Investment> get mainRows => _allInvestments.where((e) => e.parentId == null).toList();
   List<Investment> get allInvestments => _allInvestments;
   double get globalTotalAmount => _globalTotalAmount;
+  bool get isLoaded => _isLoaded;
+
   set globalTotalAmount(double value) {
     _globalTotalAmount = value;
     notifyListeners();
@@ -37,6 +40,7 @@ class InvestmentProvider extends ChangeNotifier {
     _allInvestments = await _repository.getAllInvestments();
     _globalTotalAmount = await _repository.getGlobalTotal();
     _sortInvestments();
+    _isLoaded = true;
     notifyListeners();
   }
 

@@ -25,14 +25,21 @@ class Investment {
 
   // 从数据库 Map 转为对象
   factory Investment.fromJson(Map<String, dynamic> json) {
-    String? namesJson = json['name']; // Changed from 'names' to 'name' to match DB column
     List<String> names = [];
-    if (namesJson != null) {
-      try {
-        names = jsonDecode(namesJson) as List<String>;
-      } catch (e) {
-        // Fallback if it was already a list (e.g. from a different driver or previous data)
-        names = (json['name'] as List?)?.cast<String>() ?? [];
+    final nameData = json['name'];
+
+    if (nameData != null) {
+      if (nameData is String) {
+        try {
+          final decoded = jsonDecode(nameData);
+          if (decoded is List) {
+            names = decoded.map((e) => e.toString()).toList();
+          }
+        } catch (e) {
+          names = [];
+        }
+      } else if (nameData is List) {
+        names = nameData.map((e) => e.toString()).toList();
       }
     }
 
