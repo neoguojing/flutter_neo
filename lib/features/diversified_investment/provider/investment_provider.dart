@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 class InvestmentProvider extends ChangeNotifier {
   final IInvestmentRepository _repository;
   List<Investment> _allInvestments = [];
+  double _globalTotalAmount = 1000000.0;
 
   InvestmentProvider(this._repository) {
     _loadInitialData();
@@ -14,9 +15,27 @@ class InvestmentProvider extends ChangeNotifier {
 
   List<Investment> get mainRows => _allInvestments.where((e) => e.parentId == null).toList();
   List<Investment> get allInvestments => _allInvestments;
+  double get globalTotalAmount => _globalTotalAmount;
+  set globalTotalAmount(double value) {
+    _globalTotalAmount = value;
+    notifyListeners();
+  }
+
+  List<String> get usedTools {
+    return mainRows.expand((e) => e.names).toList();
+  }
+
+  double get totalMainRatio => mainRows.fold(0, (sum, item) => sum + item.ratio);
+
+  double getSubToolTotal(String parentId) {
+    return _allInvestments
+        .where((e) => e.parentId == parentId)
+        .fold(0, (sum, item) => sum + item.ratio);
+  }
 
   Future<void> _loadInitialData() async {
     _allInvestments = await _repository.getAllInvestments();
+    _globalTotalAmount = await _repository.getGlobalTotal();
     _sortInvestments();
     notifyListeners();
   }
@@ -27,6 +46,7 @@ class InvestmentProvider extends ChangeNotifier {
 
   // 保存所有内存中的更改到数据库
   Future<void> saveAll() async {
+    await _repository.saveGlobalTotal(_globalTotalAmount);
     for (var item in _allInvestments) {
       await _repository.saveInvestment(item);
     }
@@ -37,7 +57,7 @@ class InvestmentProvider extends ChangeNotifier {
   Future<void> addRow(String toolName, double initialRatio) async {
     final newRow = Investment(
       id: const Uuid().v4(),
-      name: toolName,
+      names: [toolName],
       totalAmount: 0,
       ratio: initialRatio,
       sortOrder: _allInvestments.length + 1,
@@ -60,7 +80,7 @@ class InvestmentProvider extends ChangeNotifier {
       final item = mainRows[i];
       final updated = Investment(
         id: item.id,
-        name: item.name,
+        names: item.names,
         totalAmount: item.totalAmount,
         ratio: item.ratio,
         sortOrder: i + 1,
@@ -83,7 +103,7 @@ class InvestmentProvider extends ChangeNotifier {
   Future<void> addSubTool(String parentId, String subName, double subRatio) async {
     final newSub = Investment(
       id: const Uuid().v4(),
-      name: subName,
+      names: [subName],
       totalAmount: 0,
       ratio: subRatio,
       sortOrder: 999,
@@ -109,7 +129,7 @@ class InvestmentProvider extends ChangeNotifier {
       final item = _allInvestments[index];
       final updated = Investment(
         id: item.id,
-        name: item.name,
+        names: item.names,
         totalAmount: item.totalAmount,
         ratio: newRatio,
         sortOrder: item.sortOrder,
@@ -125,13 +145,13 @@ class InvestmentProvider extends ChangeNotifier {
   }
 
   // 更新名称（仅更新内存）
-  Future<void> updateName(String id, String newName) async {
+  Future<void> updateName(String id, List<String> newNames) async {
     final index = _allInvestments.indexWhere((e) => e.id == id);
     if (index != -1) {
       final item = _allInvestments[index];
       final updated = Investment(
         id: item.id,
-        name: newName,
+        names: newNames,
         totalAmount: item.totalAmount,
         ratio: item.ratio,
         sortOrder: item.sortOrder,
@@ -146,28 +166,9 @@ class InvestmentProvider extends ChangeNotifier {
     }
   }
 
-  // 将总投资金额保存到第一个主行中
+  // 将总投资金额保存到内存中
   Future<void> updateGlobalTotal(double amount) async {
-    final mainRows = _allInvestments.where((e) => e.parentId == null).toList();
-    if (mainRows.isNotEmpty) {
-      final firstRow = mainRows.first;
-      final updated = Investment(
-        id: firstRow.id,
-        name: firstRow.name,
-        totalAmount: amount,
-        ratio: firstRow.ratio,
-        sortOrder: firstRow.sortOrder,
-        parentId: firstRow.parentId,
-        subToolName: firstRow.subToolName,
-        subToolRatio: firstRow.subToolRatio,
-        lastUpdated: DateTime.now(),
-      );
-
-      final index = _allInvestments.indexWhere((e) => e.id == firstRow.id);
-      if (index != -1) {
-        _allInvestments[index] = updated;
-        notifyListeners();
-      }
-    }
+    _globalTotalAmount = amount;
+    notifyListeners();
   }
 }

@@ -1,6 +1,8 @@
+import 'dart:convert';
+
 class Investment {
   final String id;
-  final String name;
+  final List<String> names;
   final double totalAmount;
   final double ratio;
   final int sortOrder;
@@ -11,7 +13,7 @@ class Investment {
 
   Investment({
     required this.id,
-    required this.name,
+    required this.names,
     required this.totalAmount,
     required this.ratio,
     required this.sortOrder,
@@ -23,9 +25,20 @@ class Investment {
 
   // 从数据库 Map 转为对象
   factory Investment.fromJson(Map<String, dynamic> json) {
+    String? namesJson = json['name']; // Changed from 'names' to 'name' to match DB column
+    List<String> names = [];
+    if (namesJson != null) {
+      try {
+        names = jsonDecode(namesJson) as List<String>;
+      } catch (e) {
+        // Fallback if it was already a list (e.g. from a different driver or previous data)
+        names = (json['name'] as List?)?.cast<String>() ?? [];
+      }
+    }
+
     return Investment(
       id: json['id'],
-      name: json['name'],
+      names: names,
       totalAmount: (json['totalAmount'] as num).toDouble(),
       ratio: (json['ratio'] as num).toDouble(),
       sortOrder: json['sortOrder'] as int,
@@ -40,7 +53,7 @@ class Investment {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
+      'name': jsonEncode(names), // Changed key from 'names' to 'name' to match DB column
       'totalAmount': totalAmount,
       'ratio': ratio,
       'sortOrder': sortOrder,

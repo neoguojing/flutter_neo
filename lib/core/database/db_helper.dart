@@ -25,7 +25,7 @@ class DatabaseHelper {
     final dbPath = join(await getDatabasesPath(), filePath);
     return await openDatabase(
       dbPath,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE investments (
@@ -49,6 +49,14 @@ class DatabaseHelper {
           await db.execute('ALTER TABLE investments ADD COLUMN parentId TEXT');
           await db.execute('ALTER TABLE investments ADD COLUMN subToolName TEXT');
           await db.execute('ALTER TABLE investments ADD COLUMN subToolRatio REAL');
+        }
+        if (oldVersion < 3) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS settings (
+              key TEXT PRIMARY KEY,
+              value REAL
+            )
+          ''');
         }
       },
     );
