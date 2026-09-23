@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_neo/l10n/app_localizations.dart';
 import '../provider/investment_provider.dart';
 
 class DiversifiedInvestmentPage extends StatefulWidget {
@@ -30,10 +31,11 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final provider = Provider.of<InvestmentProvider>(context);
     final totalRatio = provider.totalMainRatio;
     final totalAmount = provider.globalTotalAmount;
-    
+
     if (provider.isLoaded && _totalAmountController.text != provider.globalTotalAmount.toString()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -43,7 +45,7 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('分散投资'),
+        title: Text(l10n.diversifiedInvestment),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -52,30 +54,27 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. 总投资金额输入框
-            const Text(
-              '总投资金额',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.totalAmount,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: 320,
-              child: TextField(
-                controller: _totalAmountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-                ],
-                decoration: const InputDecoration(
-                  prefixText: '￥ ',
-                  hintText: '输入总金额',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-                onChanged: (text) {
-                  final parsed = double.tryParse(text) ?? 0.0;
-                  provider.updateGlobalTotal(parsed);
-                },
+            TextField(
+              controller: _totalAmountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+              ],
+              decoration: InputDecoration(
+                prefixText: '￥ ',
+                hintText: '输入总金额',
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
+              onChanged: (text) {
+                final parsed = double.tryParse(text) ?? 0.0;
+                provider.updateGlobalTotal(parsed);
+              },
             ),
             const SizedBox(height: 16),
 
@@ -83,12 +82,12 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '投资工具清单',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.toolList,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '总比例: ${totalRatio.toStringAsFixed(2)}%',
+                  l10n.totalRatio(totalRatio.toStringAsFixed(2)),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -116,7 +115,7 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
               child: ElevatedButton.icon(
                 onPressed: () => provider.addRow('黄金', 0),
                 icon: const Icon(Icons.add),
-                label: const Text('添加新行'),
+                label: Text(l10n.addRow),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -132,11 +131,11 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
                   await provider.saveAll();
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('保存成功')),
+                    SnackBar(content: Text(l10n.saveSuccess)),
                   );
                 },
                 icon: const Icon(Icons.save),
-                label: const Text('保存', style: TextStyle(fontSize: 16)),
+                label: Text(l10n.save, style: const TextStyle(fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -195,6 +194,7 @@ class _InvestmentCardState extends State<_InvestmentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final provider = Provider.of<InvestmentProvider>(context);
     final rowAmount = widget.totalAmount * (widget.row.ratio / 100);
     final double subTotalRatio = provider.getSubToolTotal(widget.row.id);
@@ -265,9 +265,9 @@ class _InvestmentCardState extends State<_InvestmentCard> {
 
             // 第二部分：子工具区域
             if (subInvestments.isNotEmpty) ...[
-              const Text(
-                '子工具细分',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                l10n.addSubTool,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 8),
               Container(
@@ -303,7 +303,7 @@ class _InvestmentCardState extends State<_InvestmentCard> {
               Padding(
                 padding: const EdgeInsets.only(top: 4, left: 4),
                 child: Text(
-                  '子类总比例: ${subTotalRatio.toStringAsFixed(2)}% ${subTotalRatio > 100 ? '(超出 100%)' : ''}',
+                  l10n.subTotalRatio(subTotalRatio.toStringAsFixed(2)) + (subTotalRatio > 100 ? ' ${l10n.subRatioOverflow(subTotalRatio.toStringAsFixed(2))}' : ''),
                   style: TextStyle(
                     fontSize: 11,
                     color: subTotalRatio > 100 ? Colors.red : Colors.grey,
@@ -316,7 +316,7 @@ class _InvestmentCardState extends State<_InvestmentCard> {
                 child: TextButton.icon(
                   onPressed: () => provider.addSubTool(widget.row.id, '新子类别', 0),
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text('添加子类细分', style: TextStyle(fontSize: 12)),
+                  label: Text(l10n.addSubTool, style: const TextStyle(fontSize: 12)),
                 ),
               ),
             ],
@@ -327,7 +327,7 @@ class _InvestmentCardState extends State<_InvestmentCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '预计投入: ￥${rowAmount.toStringAsFixed(2)}',
+                  l10n.amount(rowAmount.toStringAsFixed(2)),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.blueAccent,

@@ -1,24 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neo/widgets/menu_bar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          const AppMenuBar(),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Welcome to the Home Page',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ),
-          ),
-        ],
+    return Center(
+      child: Text(
+        'Welcome to the Home Page',
+        style: Theme.of(context).textTheme.headlineMedium,
       ),
     );
   }
