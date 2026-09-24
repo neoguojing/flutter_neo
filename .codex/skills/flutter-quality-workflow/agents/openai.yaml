@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flutter 质量工作流"
+  short_description: "规范 Flutter 模块开发并执行完整质量验证流程"
+  default_prompt: "Use $flutter-quality-workflow to implement this Flutter change with the repository conventions and validation checks."
