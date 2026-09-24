@@ -44,10 +44,6 @@ class _DiversifiedInvestmentPageState extends State<DiversifiedInvestmentPage> {
       });
     }
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.diversifiedInvestment),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

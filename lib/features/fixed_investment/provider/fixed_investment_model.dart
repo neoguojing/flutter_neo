@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 class FixedInvestmentAsset {
-  final String name;
-  final String market;
-  final double currentMetric;
-  final String indicator;
-  final double totalInvestment;
-  final double initialInvestment;
-  final int totalMonths;
-  final List<InvestmentRule> rules;
+  String name;
+  String market;
+  double currentMetric;
+  String indicator;
+  double totalInvestment;
+  double initialInvestment;
+  int totalMonths;
+  List<InvestmentRule> rules;
+  String? id;
 
   FixedInvestmentAsset({
     required this.name,
@@ -19,6 +20,7 @@ class FixedInvestmentAsset {
     required this.initialInvestment,
     required this.totalMonths,
     required this.rules,
+    this.id,
   });
 
   double calculateMonthlyInvestment() {

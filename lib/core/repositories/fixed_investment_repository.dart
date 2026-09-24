@@ -4,6 +4,22 @@ abstract class IFixedInvestmentRepository {
   Future<List<FixedInvestmentAssetModel>> getAllFixedAssets();
   Future<void> saveFixedAsset(FixedInvestmentAssetModel asset);
   Future<void> deleteFixedAsset(String id);
+
+  Future<List<InvestmentToolModel>> getAllTools();
+  Future<void> saveTool(InvestmentToolModel tool);
+  Future<void> deleteTool(String id);
+}
+
+class InvestmentToolModel {
+  final String id;
+  final String name;
+  final String market;
+
+  InvestmentToolModel({required this.id, required this.name, required this.market});
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'market': market};
+  factory InvestmentToolModel.fromJson(Map<String, dynamic> json) =>
+      InvestmentToolModel(id: json['id'], name: json['name'], market: json['market']);
 }
 
 class FixedInvestmentAssetModel {

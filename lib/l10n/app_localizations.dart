@@ -278,6 +278,24 @@ abstract class AppLocalizations {
   /// **'Initial Investment'**
   String get fixedInitialInvestment;
 
+  /// No description provided for @fixedStrategyAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy Analysis'**
+  String get fixedStrategyAnalysis;
+
+  /// No description provided for @fixedInvestmentRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment Rules'**
+  String get fixedInvestmentRules;
+
+  /// No description provided for @fixedMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplier: {value}x'**
+  String fixedMultiplier(Object value);
+
   /// No description provided for @fixedTerm.
   ///
   /// In en, this message translates to:

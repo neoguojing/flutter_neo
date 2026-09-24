@@ -108,6 +108,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fixedInitialInvestment => '初始金额';
 
   @override
+  String get fixedStrategyAnalysis => '策略分析';
+
+  @override
+  String get fixedInvestmentRules => '投资规则';
+
+  @override
+  String fixedMultiplier(Object value) {
+    return '倍数: ${value}x';
+  }
+
+  @override
   String get fixedTerm => '投资期限 (月)';
 
   @override

@@ -108,6 +108,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fixedInitialInvestment => 'Initial Investment';
 
   @override
+  String get fixedStrategyAnalysis => 'Strategy Analysis';
+
+  @override
+  String get fixedInvestmentRules => 'Investment Rules';
+
+  @override
+  String fixedMultiplier(Object value) {
+    return 'Multiplier: ${value}x';
+  }
+
+  @override
   String get fixedTerm => 'Investment Term (Months)';
 
   @override

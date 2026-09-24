@@ -16,11 +16,21 @@ class FixedInvestmentRepositoryImpl implements IFixedInvestmentRepository {
     String path = join(await getDatabasesPath(), 'fixed_investment.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute(
           'CREATE TABLE fixed_assets(id TEXT PRIMARY KEY, data TEXT)',
         );
+        await db.execute(
+          'CREATE TABLE fixed_investment_tools(id TEXT PRIMARY KEY, name TEXT, market TEXT)',
+        );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'CREATE TABLE fixed_investment_tools(id TEXT PRIMARY KEY, name TEXT, market TEXT)',
+          );
+        }
       },
     );
   }
@@ -50,5 +60,28 @@ class FixedInvestmentRepositoryImpl implements IFixedInvestmentRepository {
   Future<void> deleteFixedAsset(String id) async {
     final db = await database;
     await db.delete('fixed_assets', where: 'id = ?', whereArgs: [id]);
+  }
+
+  @override
+  Future<List<InvestmentToolModel>> getAllTools() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('fixed_investment_tools');
+    return maps.map((map) => InvestmentToolModel.fromJson(map)).toList();
+  }
+
+  @override
+  Future<void> saveTool(InvestmentToolModel tool) async {
+    final db = await database;
+    await db.insert(
+      'fixed_investment_tools',
+      tool.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<void> deleteTool(String id) async {
+    final db = await database;
+    await db.delete('fixed_investment_tools', where: 'id = ?', whereArgs: [id]);
   }
 }
