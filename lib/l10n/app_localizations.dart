@@ -209,7 +209,7 @@ abstract class AppLocalizations {
   /// No description provided for @amount.
   ///
   /// In en, this message translates to:
-  /// **'Estimated Investment: ￥{amount}'**
+  /// **'Estimated Investment: {amount}'**
   String amount(Object amount);
 
   /// No description provided for @addSubTool.

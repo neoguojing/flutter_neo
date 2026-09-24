@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../../provider/fixed_investment_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class StrategyVisualizer extends StatefulWidget {
   final FixedInvestmentAsset asset;
@@ -42,8 +44,18 @@ class _StrategyVisualizerState extends State<StrategyVisualizer> {
     return baseMonthly * multiplier;
   }
 
+  String _formatCurrency(double amount, String market) {
+    // Determine currency code based on market
+    String currencyCode = (market == 'ashare') ? 'CNY' : 'USD';
+    // Use simpleCurrency to get the localized symbol and formatting
+    final formatter = NumberFormat.simpleCurrency(name: currencyCode);
+    return formatter.format(amount);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         // 1. 阶梯图 (显示倍数映射)
@@ -73,7 +85,7 @@ class _StrategyVisualizerState extends State<StrategyVisualizer> {
         // 2. 模拟计算器
         Row(
           children: [
-            const Text("模拟指标: ", style: TextStyle(fontSize: 12, color: Colors.grey),),
+            Text(l10n.fixedMetricValue, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             Expanded(
               child: Slider(
                 value: _simulatedMetric,
@@ -96,9 +108,9 @@ class _StrategyVisualizerState extends State<StrategyVisualizer> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("预测每月投入:", style: TextStyle(fontSize: 13)),
+              Text(l10n.fixedMonthlyInvestment, style: const TextStyle(fontSize: 13)),
               Text(
-                "￥${_calculateAmount(_simulatedMetric).toStringAsFixed(2)}",
+                l10n.amount(_formatCurrency(_calculateAmount(_simulatedMetric), widget.asset.market)),
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
               ),
             ],

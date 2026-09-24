@@ -17,7 +17,7 @@
   "totalRatio": "总比例: {ratio}%",
   "toolName": "工具名称",
   "ratio": "比例",
-  "amount": "预计投入: ￥{amount}",
+  "amount": "预计投入: {amount}",
   "addSubTool": "添加子类细分",
   "subTotalRatio": "子类总比例: {ratio}%",
   "subRatioOverflow": "子类总比例: {ratio}% (超出 100%)",

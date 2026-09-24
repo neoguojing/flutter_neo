@@ -296,4 +296,11 @@ class FixedInvestmentProvider with ChangeNotifier {
     _tools.removeWhere((t) => t.id == id);
     notifyListeners();
   }
+
+  String indicatorName(String indicator) => switch (indicator) {
+        'pe_percentile' => 'PE历史分位',
+        'forward_pe_percentile' => 'Forward PE历史分位',
+        'shiller_pe_ratio' => 'Shiller PE',
+        _ => indicator,
+      };
 }

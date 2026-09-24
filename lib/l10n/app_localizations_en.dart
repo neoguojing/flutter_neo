@@ -67,7 +67,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String amount(Object amount) {
-    return 'Estimated Investment: ￥$amount';
+    return 'Estimated Investment: $amount';
   }
 
   @override

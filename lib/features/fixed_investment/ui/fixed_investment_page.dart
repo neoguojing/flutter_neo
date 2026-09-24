@@ -261,9 +261,9 @@ class _FixedInvestmentCardState extends State<FixedInvestmentCard> {
   }
 
   String _indicatorName(String indicator) => switch (indicator) {
-        'pe_percentile' => '估值百分位',
-        'forward_pe_percentile' => '均线偏离度',
-        'shiller_pe_ratio' => '股债性价比',
+        'pe_percentile' => 'PE历史分位',
+        'forward_pe_percentile' => 'Forward PE历史分位',
+        'shiller_pe_ratio' => 'Shiller PE',
         _ => indicator,
       };
 }

@@ -17,7 +17,7 @@
   "totalRatio": "Total Ratio: {ratio}%",
   "toolName": "Tool Name",
   "ratio": "Ratio",
-  "amount": "Estimated Investment: ￥{amount}",
+  "amount": "Estimated Investment: {amount}",
   "addSubTool": "Add Sub-category",
   "subTotalRatio": "Sub-category Total Ratio: {ratio}%",
   "subRatioOverflow": "Sub-category Total Ratio: {ratio}% (Exceeds 100%)",

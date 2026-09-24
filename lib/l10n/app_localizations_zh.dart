@@ -67,7 +67,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String amount(Object amount) {
-    return '预计投入: ￥$amount';
+    return '预计投入: $amount';
   }
 
   @override
