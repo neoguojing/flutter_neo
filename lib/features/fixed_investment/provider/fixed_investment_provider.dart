@@ -79,7 +79,7 @@ class FixedInvestmentProvider with ChangeNotifier {
       final models = await _repository.getAllFixedAssets();
       _assets = models.map((m) => FixedInvestmentAsset(
         id: m.id,
-        toolId: m.name, // Mapping existing name to toolId for migration
+        toolId: _toolIdFor(m),
         name: m.name,
         market: m.market,
         currentMetric: m.currentMetric,
@@ -91,7 +91,7 @@ class FixedInvestmentProvider with ChangeNotifier {
       )).toList();
 
       if (_assets.isEmpty) {
-        _loadDefaultAssets();
+        await _loadDefaultAssets();
       }
     } catch (e) {
       debugPrint('Error loading assets: $e');
@@ -99,6 +99,17 @@ class FixedInvestmentProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  String _toolIdFor(FixedInvestmentAssetModel model) {
+    if (model.toolId.isNotEmpty && _tools.any((tool) => tool.id == model.toolId)) {
+      return model.toolId;
+    }
+    return _tools
+        .where((tool) => tool.name == model.name)
+        .map((tool) => tool.id)
+        .firstOrNull ??
+        (_tools.isNotEmpty ? _tools.first.id : '');
   }
 
   Future<void> _loadDefaultTools() async {
@@ -114,27 +125,101 @@ class FixedInvestmentProvider with ChangeNotifier {
     _tools = defaultTools;
   }
 
-  void _loadDefaultAssets() {
+  Future<void> _loadDefaultAssets() async {
     _assets = [
-      FixedInvestmentAsset(
-        id: const Uuid().v4(),
+      _defaultAsset(
         toolId: '1',
         name: '中证A500',
         market: 'ashare',
         currentMetric: 69.09,
-        indicator: 'pe_percentile',
-        totalInvestment: 320000.0,
-        initialInvestment: 30000.0,
-        totalMonths: 24,
-        rules: [
-          InvestmentRule(min: 0, max: 20, multiplier: 2.0),
-          InvestmentRule(min: 20, max: 30, multiplier: 1.5),
-          InvestmentRule(min: 30, max: 50, multiplier: 1.0),
-          InvestmentRule(min: 50, max: 80, multiplier: 0.5),
-          InvestmentRule(min: 80, max: 100, multiplier: 0.3),
+        totalInvestment: 320000,
+        initialInvestment: 30000,
+        rules: const [
+          (0, 20, 2.0),
+          (20, 30, 1.5),
+          (30, 50, 1.0),
+          (50, 80, 0.5),
+          (80, 100, 0.3),
+        ],
+      ),
+      _defaultAsset(
+        toolId: '2',
+        name: '科创50',
+        market: 'ashare',
+        currentMetric: 50,
+        totalInvestment: 100000,
+        initialInvestment: 0,
+        rules: const [
+          (0, 20, 2.0),
+          (20, 40, 1.5),
+          (40, 60, 1.0),
+          (60, 80, 0.7),
+          (80, 100, 0.5),
+        ],
+      ),
+      _defaultAsset(
+        toolId: '3',
+        name: '标普500',
+        market: 'us',
+        currentMetric: 40.73,
+        indicator: 'shiller_pe_ratio',
+        totalInvestment: 230000,
+        initialInvestment: 5600,
+        rules: const [
+          (0, 25, 2.0),
+          (25, 30, 1.5),
+          (30, 35, 1.0),
+          (35, 40, 0.6),
+          (40, 100, 0.4),
+        ],
+      ),
+      _defaultAsset(
+        toolId: '4',
+        name: '纳斯达克100',
+        market: 'us',
+        currentMetric: 21.7,
+        indicator: 'forward_pe_percentile',
+        totalInvestment: 150000,
+        initialInvestment: 4200,
+        rules: const [
+          (0, 20, 2.0),
+          (20, 40, 1.5),
+          (40, 60, 1.0),
+          (60, 80, 0.5),
+          (80, 100, 0.3),
         ],
       ),
     ];
+    for (final asset in _assets) {
+      await saveAsset(asset);
+    }
+  }
+
+  FixedInvestmentAsset _defaultAsset({
+    required String toolId,
+    required String name,
+    required String market,
+    required double currentMetric,
+    required double totalInvestment,
+    required double initialInvestment,
+    required List<(double, double, double)> rules,
+    String indicator = 'pe_percentile',
+  }) {
+    return FixedInvestmentAsset(
+      id: const Uuid().v4(),
+      toolId: toolId,
+      name: name,
+      market: market,
+      currentMetric: currentMetric,
+      indicator: indicator,
+      totalInvestment: totalInvestment,
+      initialInvestment: initialInvestment,
+      totalMonths: 24,
+      rules: [
+        for (final rule in rules)
+          InvestmentRule(min: rule.$1, max: rule.$2, multiplier: rule.$3),
+      ],
+    );
   }
 
   void updateAsset(FixedInvestmentAsset asset) {
@@ -154,6 +239,7 @@ class FixedInvestmentProvider with ChangeNotifier {
 
     final model = FixedInvestmentAssetModel(
       id: asset.id,
+      toolId: asset.toolId,
       name: tool.name,
       market: asset.market,
       currentMetric: asset.currentMetric,
@@ -181,6 +267,7 @@ class FixedInvestmentProvider with ChangeNotifier {
       rules: [InvestmentRule(min: 0, max: 100, multiplier: 1.0)],
     );
     _assets.add(newAsset);
+    await saveAsset(newAsset);
     notifyListeners();
   }
 
@@ -192,7 +279,13 @@ class FixedInvestmentProvider with ChangeNotifier {
 
   // Tool management
   Future<void> addTool(String name, String market) async {
-    final tool = InvestmentToolModel(id: const Uuid().v4(), name: name, market: market);
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) return;
+    final tool = InvestmentToolModel(
+      id: const Uuid().v4(),
+      name: trimmedName,
+      market: market.trim().isEmpty ? 'custom' : market.trim(),
+    );
     await _repository.saveTool(tool);
     _tools.add(tool);
     notifyListeners();

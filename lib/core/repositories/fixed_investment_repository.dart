@@ -24,6 +24,7 @@ class InvestmentToolModel {
 
 class FixedInvestmentAssetModel {
   final String id;
+  final String toolId;
   final String name;
   final String market;
   final double currentMetric;
@@ -35,6 +36,7 @@ class FixedInvestmentAssetModel {
 
   FixedInvestmentAssetModel({
     required this.id,
+    required this.toolId,
     required this.name,
     required this.market,
     required this.currentMetric,
@@ -48,6 +50,7 @@ class FixedInvestmentAssetModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'toolId': toolId,
       'name': name,
       'market': market,
       'currentMetric': currentMetric,
@@ -62,6 +65,9 @@ class FixedInvestmentAssetModel {
   factory FixedInvestmentAssetModel.fromJson(Map<String, dynamic> json) {
     return FixedInvestmentAssetModel(
       id: json['id'],
+      // Older saved plans only stored the tool name.  The provider resolves
+      // those records to a tool during its one-time read migration.
+      toolId: json['toolId'] as String? ?? '',
       name: json['name'],
       market: json['market'],
       currentMetric: (json['currentMetric'] as num).toDouble(),
@@ -83,5 +89,9 @@ class InvestmentRuleModel {
 
   Map<String, dynamic> toJson() => {'min': min, 'max': max, 'multiplier': multiplier};
   factory InvestmentRuleModel.fromJson(Map<String, dynamic> json) =>
-    InvestmentRuleModel(min: json['min'], max: json['max'], multiplier: json['multiplier']);
+    InvestmentRuleModel(
+      min: (json['min'] as num).toDouble(),
+      max: (json['max'] as num).toDouble(),
+      multiplier: (json['multiplier'] as num).toDouble(),
+    );
 }

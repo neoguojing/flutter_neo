@@ -1,169 +1,96 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_neo/l10n/app_localizations.dart';
 import 'package:flutter_neo/features/fixed_investment/provider/fixed_investment_provider.dart';
+import 'package:flutter_neo/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+
 import 'widgets/strategy_visualizer.dart';
-import 'widgets/asset_detail_sheet.dart';
 
 class FixedInvestmentPage extends StatelessWidget {
   const FixedInvestmentPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<FixedInvestmentProvider>();
     final l10n = AppLocalizations.of(context)!;
-    final provider = Provider.of<FixedInvestmentProvider>(context);
-    final assets = provider.assets;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.fixedInvestmentTitle), // Assuming this exists, or I'll just use title
+        title: Text(l10n.fixedInvestment),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_tool),
-            onPressed: () {
-              // Show a dialog to add a tool
-              _showAddToolDialog(context, provider);
-            },
+            tooltip: '添加投资工具',
+            icon: const Icon(Icons.add_chart_outlined),
+            onPressed: () => _showAddToolDialog(context),
           ),
         ],
       ),
       body: provider.isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: assets.length,
-            itemBuilder: (context, index) {
-              return FixedInvestmentCard(asset: assets[index]);
-            },
-          ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show a dialog to add an asset
-          _showAddAssetDialog(context, provider);
-        },
-        child: const Icon(Icons.add),
-      ),
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  '为每个投资标的设置指标区间与定投倍率。配置会在保存后自动恢复。',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                ...provider.assets.map(
+                  (asset) => FixedInvestmentCard(key: ValueKey(asset.id), asset: asset),
+                ),
+                OutlinedButton.icon(
+                  onPressed: provider.addAsset,
+                  icon: const Icon(Icons.add),
+                  label: const Text('新增定投标的'),
+                ),
+              ],
+            ),
     );
   }
 
-  void _showAddToolDialog(BuildContext context, FixedInvestmentProvider provider) {
+  Future<void> _showAddToolDialog(BuildContext context) async {
     final nameController = TextEditingController();
     final marketController = TextEditingController();
-    showDialog(
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Tool'),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('添加投资工具'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Tool Name'),
+              autofocus: true,
+              decoration: const InputDecoration(labelText: '工具名称'),
             ),
             TextField(
               controller: marketController,
-              decoration: const InputDecoration(labelText: 'Market'),
+              decoration: const InputDecoration(labelText: '市场（可选）'),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('取消')),
+          FilledButton(
             onPressed: () async {
-              await provider.addTool(nameController.text, marketController.text);
-              Navigator.pop(context);
+              await context.read<FixedInvestmentProvider>().addTool(
+                    nameController.text,
+                    marketController.text,
+                  );
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
-            child: const Text('Add'),
+            child: const Text('添加'),
           ),
         ],
       ),
     );
-  }
-
-  void _showAddAssetDialog(BuildContext context, FixedInvestmentProvider provider) {
-    final nameController = TextEditingController();
-    final metricController = TextEditingController(text: '50.0');
-    final totalInvestmentController = TextEditingController(text: '100000.0');
-    final initialInvestmentController = TextEditingController(text: '0.0');
-    final termController = TextEditingController(text: '24');
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text('New Investment Asset'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Select Tool'),
-                    items: provider.tools.map((t) {
-                      return DropdownMenuItem(value: t.id, child: Text(t.name));
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        final tool = provider.tools.firstWhere((t) => t.id == val);
-                        nameController.text = tool.name;
-                      }
-                    },
-                  ),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: metricController,
-                    decoration: const InputDecoration(labelText: 'Current Metric'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: totalInvestmentController,
-                    decoration: const InputDecoration(labelText: 'Total Investment'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: initialInvestmentController,
-                    decoration: const InputDecoration(labelText: 'Initial Investment'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: termController,
-                    decoration: const InputDecoration(labelText: 'Term (Months)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final tool = provider.tools.firstWhere((t) => t.id == nameController.text); // This is slightly wrong logic but just for now
-                  // I'll fix this properly in the next step.
-                  // I should use the selected tool's ID.
-                  // For now, let's just use the existing logic but in a dialog.
-                  Navigator.pop(context);
-                },
-                child: const Text('Add'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+    nameController.dispose();
+    marketController.dispose();
   }
 }
 
 class FixedInvestmentCard extends StatefulWidget {
   final FixedInvestmentAsset asset;
+
   const FixedInvestmentCard({super.key, required this.asset});
 
   @override
@@ -171,60 +98,70 @@ class FixedInvestmentCard extends StatefulWidget {
 }
 
 class _FixedInvestmentCardState extends State<FixedInvestmentCard> {
-  late TextEditingController _nameController;
-  late TextEditingController _metricController;
-  late TextEditingController _totalInvestmentController;
-  late TextEditingController _initialInvestmentController;
-  late TextEditingController _termController;
+  late final TextEditingController _metricController;
+  late final TextEditingController _totalController;
+  late final TextEditingController _initialController;
+  late final TextEditingController _monthsController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.asset.name);
     _metricController = TextEditingController(text: widget.asset.currentMetric.toString());
-    _totalInvestmentController = TextEditingController(text: widget.asset.totalInvestment.toString());
-    _initialInvestmentController = TextEditingController(text: widget.asset.initialInvestment.toString());
-    _termController = TextEditingController(text: widget.asset.totalMonths.toString());
+    _totalController = TextEditingController(text: widget.asset.totalInvestment.toString());
+    _initialController = TextEditingController(text: widget.asset.initialInvestment.toString());
+    _monthsController = TextEditingController(text: widget.asset.totalMonths.toString());
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _metricController.dispose();
-    _totalInvestmentController.dispose();
-    _initialInvestmentController.dispose();
-    _termController.dispose();
+    _totalController.dispose();
+    _initialController.dispose();
+    _monthsController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.read<FixedInvestmentProvider>();
     final l10n = AppLocalizations.of(context)!;
-    final provider = Provider.of<FixedInvestmentProvider>(context, listen: false);
+    final asset = widget.asset;
+    final selectedToolId = provider.tools.any((tool) => tool.id == asset.toolId)
+        ? asset.toolId
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: l10n.fixedAssetName),
-                    onChanged: (val) {
-                      widget.asset.name = val;
-                      _nameController.text = val;
+                  child: DropdownButtonFormField<String>(
+                    value: selectedToolId,
+                    decoration: const InputDecoration(labelText: '投资工具'),
+                    items: provider.tools
+                        .map((tool) => DropdownMenuItem(value: tool.id, child: Text(tool.name)))
+                        .toList(),
+                    onChanged: (toolId) {
+                      if (toolId == null) return;
+                      final tool = provider.tools.firstWhere((item) => item.id == toolId);
+                      setState(() {
+                        asset.toolId = tool.id;
+                        asset.name = tool.name;
+                        asset.market = tool.market;
+                      });
                     },
-                    controller: _nameController,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => provider.removeAsset(widget.asset.id),
+                  tooltip: '删除标的',
+                  onPressed: () => provider.removeAsset(asset.id),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
               ],
             ),
@@ -232,30 +169,23 @@ class _FixedInvestmentCardState extends State<FixedInvestmentCard> {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: l10n.fixedMetricValue),
-                    keyboardType: TextInputType.number,
+                  child: _numberField(
                     controller: _metricController,
-                    onChanged: (val) {
-                      widget.asset.currentMetric = double.tryParse(val) ?? 0.0;
-                      _metricController.text = val;
-                    },
+                    label: l10n.fixedMetricValue,
+                    onChanged: (value) => asset.currentMetric = value,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField(
+                  child: DropdownButtonFormField<String>(
+                    value: FixedInvestmentProvider.supportedIndicators.contains(asset.indicator)
+                        ? asset.indicator
+                        : FixedInvestmentProvider.supportedIndicators.first,
                     decoration: InputDecoration(labelText: l10n.fixedIndicator),
-                    value: widget.asset.indicator,
-                    items: FixedInvestmentProvider.supportedIndicators.map((indicator) {
-                      return DropdownMenuItem(
-                        value: indicator,
-                        child: Text(indicator),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      widget.asset.indicator = val as String;
-                    },
+                    items: FixedInvestmentProvider.supportedIndicators
+                        .map((indicator) => DropdownMenuItem(value: indicator, child: Text(_indicatorName(indicator))))
+                        .toList(),
+                    onChanged: (indicator) => setState(() => asset.indicator = indicator!),
                   ),
                 ),
               ],
@@ -263,55 +193,35 @@ class _FixedInvestmentCardState extends State<FixedInvestmentCard> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: l10n.fixedTotalInvestment),
-                    keyboardType: TextInputType.number,
-                    controller: _totalInvestmentController,
-                    onChanged: (val) {
-                      widget.asset.totalInvestment = double.tryParse(val) ?? 0.0;
-                      _totalInvestmentController.text = val;
-                    },
-                  ),
-                ),
+                Expanded(child: _numberField(controller: _totalController, label: l10n.fixedTotalInvestment, onChanged: (value) => asset.totalInvestment = value)),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: l10n.fixedInitialInvestment),
-                    keyboardType: TextInputType.number,
-                    controller: _initialInvestmentController,
-                    onChanged: (val) {
-                      widget.asset.initialInvestment = double.tryParse(val) ?? 0.0;
-                      _initialInvestmentController.text = val;
-                    },
-                  ),
-                ),
+                Expanded(child: _numberField(controller: _initialController, label: l10n.fixedInitialInvestment, onChanged: (value) => asset.initialInvestment = value)),
               ],
             ),
             const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: l10n.fixedTerm),
-              keyboardType: TextInputType.number,
-              controller: _termController,
-              onChanged: (val) {
-                widget.asset.totalMonths = int.tryParse(val) ?? 1;
-                _termController.text = val;
-              },
+            _numberField(
+              controller: _monthsController,
+              label: l10n.fixedTerm,
+              integer: true,
+              onChanged: (value) => asset.totalMonths = value.round().clamp(1, 1000).toInt(),
             ),
             const SizedBox(height: 16),
-            StrategyVisualizer(asset: widget.asset),
-            const SizedBox(height: 12),
-            _buildRulesSection(l10n, provider),
-            const SizedBox(height: 12),
+            _buildRules(),
+            const SizedBox(height: 8),
+            StrategyVisualizer(asset: asset),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  provider.updateAsset(widget.asset);
-                  provider.saveAsset(widget.asset);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saveSuccess)));
+              child: FilledButton.icon(
+                onPressed: () async {
+                  provider.updateAsset(asset);
+                  await provider.saveAsset(asset);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saveSuccess)));
+                  }
                 },
-                child: Text(l10n.fixedSave),
+                icon: const Icon(Icons.save_outlined),
+                label: Text(l10n.fixedSave),
               ),
             ),
           ],
@@ -320,70 +230,75 @@ class _FixedInvestmentCardState extends State<FixedInvestmentCard> {
     );
   }
 
-  Widget _buildRulesSection(AppLocalizations l10n, FixedInvestmentProvider provider) {
+  Widget _numberField({required TextEditingController controller, required String label, required ValueChanged<double> onChanged, bool integer = false}) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(labelText: label),
+      keyboardType: TextInputType.numberWithOptions(decimal: !integer),
+      onChanged: (text) => onChanged(double.tryParse(text) ?? 0),
+    );
+  }
+
+  Widget _buildRules() {
+    final rules = widget.asset.rules;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(Icons.list, size: 18, color: Colors.blueAccent),
-            const SizedBox(width: 8),
-            Text(l10n.fixedInvestmentRules, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...widget.asset.rules.asMap().entries.map((entry) {
-          int idx = entry.key;
-          InvestmentRule rule = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: "Min %"),
-                    keyboardType: TextInputType.number,
-                    onChanged: (val) => rule.min = double.tryParse(val) ?? 0.0,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: "Max %"),
-                    keyboardType: TextInputType.number,
-                    onChanged: (val) => rule.max = double.tryParse(val) ?? 0.0,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: "Multiplier"),
-                    keyboardType: TextInputType.number,
-                    onChanged: (val) => rule.multiplier = double.tryParse(val) ?? 1.0,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      widget.asset.rules.removeAt(idx);
-                    });
-                  },
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+        const Text('规则区间与定投倍率', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...rules.asMap().entries.map((entry) => _RuleRow(
+              key: ValueKey('${widget.asset.id}-${entry.key}'),
+              rule: entry.value,
+              onDelete: rules.length == 1 ? null : () => setState(() => rules.removeAt(entry.key)),
+            )),
         TextButton.icon(
-          onPressed: () {
-            setState(() {
-              widget.asset.rules.add(InvestmentRule(min: 0, max: 100, multiplier: 1.0));
-            });
-          },
+          onPressed: () => setState(() => rules.add(InvestmentRule(min: 0, max: 100, multiplier: 1))),
           icon: const Icon(Icons.add),
-          label: const Text("Add Rule"),
+          label: const Text('新增规则行'),
         ),
       ],
     );
   }
+
+  String _indicatorName(String indicator) => switch (indicator) {
+        'pe_percentile' => '估值百分位',
+        'forward_pe_percentile' => '均线偏离度',
+        'shiller_pe_ratio' => '股债性价比',
+        _ => indicator,
+      };
+}
+
+class _RuleRow extends StatelessWidget {
+  final InvestmentRule rule;
+  final VoidCallback? onDelete;
+
+  const _RuleRow({super.key, required this.rule, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(child: _field('下限', rule.min, (value) => rule.min = value)),
+          const SizedBox(width: 8),
+          Expanded(child: _field('上限', rule.max, (value) => rule.max = value)),
+          const SizedBox(width: 8),
+          Expanded(child: _field('倍率', rule.multiplier, (value) => rule.multiplier = value)),
+          IconButton(
+            tooltip: '删除规则',
+            onPressed: onDelete,
+            icon: const Icon(Icons.remove_circle_outline),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, double value, ValueChanged<double> onChanged) => TextFormField(
+        initialValue: value.toString(),
+        decoration: InputDecoration(labelText: label, isDense: true),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        onChanged: (text) => onChanged(double.tryParse(text) ?? 0),
+      );
 }
